@@ -7,6 +7,7 @@ class PCAClassifier:
         self.X_centered = None
         self.num_components = None
         self.theta = None
+        self.eigenvectors = None
 
     def _update_theta(self, num_components):
         # Update theta only if number of PCA components has been changed or theta is unset
@@ -22,7 +23,7 @@ class PCAClassifier:
             distances = []
 
             for i in range(self.num_components):
-                for j in range(i + 1, self.num_components):
+                for j in range(i, self.num_components):
                     distances.append(np.abs(sigma[i] - sigma[j]))
             self.theta = np.max(distances) / 2
 
@@ -38,10 +39,10 @@ class PCAClassifier:
         w, v = np.linalg.eig(C)
 
         eigenvalues_order = np.argsort(w)[::-1][:self.num_components].tolist()
-        self.eigenvalues = w[eigenvalues_order]
+
         self.eigenvectors = v[eigenvalues_order]
         U = self.X_centered[:, eigenvalues_order] @ self.eigenvectors
-        # Normalize columns of U
+        # Normalize eigenfaces
         self.U = np.array([u_i / np.linalg.norm(u_i) for u_i in U.T]).T
 
     def reconstruct(self, y, num_components=None):
@@ -53,6 +54,6 @@ class PCAClassifier:
         return np.linalg.norm(y.reshape(-1) - self.reconstruct(y, num_components))
 
     def predict(self, y, num_components=None):
-        # NOTE: If num_components is changed then theta will be updated in self.reconstruct
+        # NOTE: If num_components is changed then theta will be updated
         score = self.score(y, num_components)
         return score < self.theta
